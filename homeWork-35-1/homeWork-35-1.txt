@@ -1,0 +1,113 @@
+CREATE DATABASE IF NOT EXISTS library_db;
+USE library_db;
+
+CREATE TABLE `Типы_произведений` (`id_типа` INT NOT NULL AUTO_INCREMENT, `Название_типа` VARCHAR(50) NOT NULL, PRIMARY KEY (`id_типа`));
+
+CREATE TABLE `Писатели` (`id_писателя` INT NOT NULL AUTO_INCREMENT, `ФИО` VARCHAR(100) NOT NULL, PRIMARY KEY (`id_писателя`));
+
+CREATE TABLE `Категории` (`id_категории` INT NOT NULL AUTO_INCREMENT, `Название_категории` VARCHAR(100) NOT NULL, `id_родителя` INT NULL, PRIMARY KEY (`id_категории`), CONSTRAINT `fk_categories_parent` FOREIGN KEY (`id_родителя`) REFERENCES `Категории` (`id_категории`) ON DELETE SET NULL ON UPDATE CASCADE);
+
+CREATE TABLE `Произведения` (`id_произведения` INT NOT NULL AUTO_INCREMENT, `Название` VARCHAR(150) NOT NULL, `Код_типа` INT NOT NULL, PRIMARY KEY (`id_произведения`), CONSTRAINT `fk_works_types` FOREIGN KEY (`Код_типа`) REFERENCES `Типы_произведений` (`id_типа`) ON DELETE RESTRICT ON UPDATE CASCADE);
+
+CREATE TABLE `Авторы_Произведений` (`Код_писателя` INT NOT NULL, `Код_произведения` INT NOT NULL, PRIMARY KEY (`Код_писателя`, `Код_произведения`), CONSTRAINT `fk_author_works_writers` 
+        FOREIGN KEY (`Код_писателя`) REFERENCES `Писатели` (`id_писателя`) 
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE,
+    CONSTRAINT `fk_author_works_works` 
+        FOREIGN KEY (`Код_произведения`) REFERENCES `Произведения` (`id_произведения`) 
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE `Категории_Произведений` (
+    `Код_произведения` INT NOT NULL,
+    `Код_категории` INT NOT NULL,
+    PRIMARY KEY (`Код_произведения`, `Код_категории`),
+    CONSTRAINT `fk_cat_works_works` 
+        FOREIGN KEY (`Код_произведения`) REFERENCES `Произведения` (`id_произведения`) 
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE,
+    CONSTRAINT `fk_cat_works_categories` 
+        FOREIGN KEY (`Код_категории`) REFERENCES `Категории` (`id_категории`) 
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE
+);
+
+
+
+USE library_db;
+
+INSERT INTO `Типы_произведений` (`id_типа`, `Название_типа`) VALUES
+(1, 'Роман'),
+(2, 'Повесть'),
+(3, 'Статья'),
+(4, 'Учебник');
+
+INSERT INTO `Писатели` (`id_писателя`, `ФИО`) VALUES
+(1, 'Пушкин А.С.'),
+(2, 'Стругацкий А.Н.'),
+(3, 'Ландау Л.Д.'),
+(4, 'Лифшиц Е.М.');
+
+INSERT INTO `Категории` (`id_категории`, `Название_категории`, `id_родителя`) VALUES
+(1, 'Физика', NULL),
+(2, 'Художественная литература', NULL);
+
+INSERT INTO `Категории` (`id_категории`, `Название_категории`, `id_родителя`) VALUES
+(3, 'Квантовая механика', 1), 
+(4, 'Механика', 1),           
+(5, 'Фантастика', 2);        
+
+INSERT INTO `Произведения` (`id_произведения`, `Название`, `Код_типа`) VALUES
+(101, 'Капитанская дочка', 2),          
+(102, 'Пикник на обочине', 1),          
+(103, 'Квантовая механика. Том 3', 4);  
+
+INSERT INTO `Авторы_Произведений` (`Код_писателя`, `Код_произведения`) VALUES
+(1, 101), 
+(2, 102),
+(3, 103),
+(4, 103);
+
+INSERT INTO `Категории_Произведений` (`Код_произведения`, `Код_категории`) VALUES
+(101, 2), 
+(102, 2), 
+(102, 5), 
+(103, 1),
+(103, 3);
+
+
+
+
+# бонус скрипты 
+
+SELECT Название 
+FROM Произведения, Авторы_Произведений, Писатели
+WHERE Произведения.id_произведения = Авторы_Произведений.Код_произведения
+  AND Авторы_Произведений.Код_писателя = Писатели.id_писателя
+  AND Писатели.ФИО = 'Пушкин А.С.';
+
+
+SELECT Название 
+FROM Произведения, Категории_Произведений, Категории
+WHERE Произведения.id_произведения = Категории_Произведений.Код_произведения
+  AND Категории_Произведений.Код_категории = Категории.id_категории
+  AND Категории.Название_категории = 'Квантовая механика';
+
+
+SELECT ФИО 
+FROM Писатели, Авторы_Произведений, Произведения
+WHERE Писатели.id_писателя = Авторы_Произведений.Код_писателя
+  AND Авторы_Произведений.Код_произведения = Произведения.id_произведения
+  AND Произведения.Название = 'Квантовая механика. Том 3';
+
+SELECT DISTINCT Название_категории
+FROM Категории, Категории_Произведений, Произведения, Авторы_Произведений, Писатели
+WHERE Категории.id_категории = Категории_Произведений.Код_категории
+  AND Категории_Произведений.Код_произведения = Произведения.id_произведения
+  AND Произведения.id_произведения = Авторы_Произведений.Код_произведения
+  AND Авторы_Произведений.Код_писателя = Писатели.id_писателя
+  AND Писатели.ФИО = 'Стругацкий А.Н.';
+
+
+
